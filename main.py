@@ -5,6 +5,17 @@ from collections import Counter
 import praw
 from dotenv import load_dotenv
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # for testing; restrict later to your domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # Load keys from .env
 load_dotenv()
 
