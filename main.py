@@ -4,6 +4,15 @@ from datetime import datetime
 from collections import Counter
 import praw
 import json, os
+import nltk
+from nltk.corpus import stopwords
+
+# Download stopwords if not already present
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,7 +20,6 @@ load_dotenv()
 app = FastAPI()
 
 LOG_FILE = "search_log.json"
-
 # Ensure log file exists
 if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, "w") as f:
@@ -23,7 +31,8 @@ app.add_middleware(
     allow_origins=[
         "https://madeofai.com",
         "https://www.madeofai.com",
-        "https://madeofai.github.io"
+        "https://madeofai.github.io",
+        "http://localhost:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -63,7 +72,18 @@ async def analyze(term: str, request: Request):
             results.append(submission.title + " " + submission.selftext)
 
         text = " ".join(results)
-        words = [w.lower() for w in text.split() if len(w) > 3]
+        
+        # Filter out words from the search term itself AND standard stopwords
+        search_terms = set(term.lower().split())
+        stop_words = set(stopwords.words('english'))
+        
+        words = [
+            w.lower() for w in text.split() 
+            if len(w) > 3 
+            and w.lower() not in search_terms
+            and w.lower() not in stop_words
+        ]
+        
         counts = Counter(words).most_common(60)
 
         return {"term": term, "status": "ok", "data": {"counts": counts}}
