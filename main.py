@@ -6,6 +6,9 @@ import praw
 import json, os
 import nltk
 from nltk.corpus import stopwords
+import inflect
+
+p = inflect.engine()
 
 # Download stopwords if not already present
 try:
@@ -75,6 +78,19 @@ async def analyze(term: str, request: Request):
         
         # Filter out words from the search term itself AND standard stopwords
         search_terms = set(term.lower().split())
+        
+        # Add singular and plural forms to search_terms
+        expanded_terms = set()
+        for t in search_terms:
+            expanded_terms.add(t)
+            singular = p.singular_noun(t)
+            if singular:
+                expanded_terms.add(singular)
+            plural = p.plural(t)
+            if plural:
+                expanded_terms.add(plural)
+        
+        search_terms = expanded_terms
         stop_words = set(stopwords.words('english'))
         
         words = [
