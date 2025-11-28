@@ -99,6 +99,9 @@ async def analyze(term: str, request: Request):
         search_terms = expanded_terms
         stop_words = set(stopwords.words('english'))
         
+        print(f"DEBUG: Term='{term}'")
+        print(f"DEBUG: Search Terms={search_terms}")
+
         # Split text by non-alphanumeric characters to clean words
         words = [
             w.lower() for w in re.split(r'[^a-zA-Z0-9]', text)
@@ -108,6 +111,12 @@ async def analyze(term: str, request: Request):
         ]
         
         counts = Counter(words).most_common(60)
+        
+        # DEBUG: Inject fake result to verify connection
+        if term.lower() == 'happy':
+            counts.insert(0, ('TEST_CONNECTION_SUCCESS', 999))
+            
+        print(f"DEBUG: Top 10 results: {counts[:10]}")
 
         return {"term": term, "status": "ok", "data": {"counts": counts}}
 
