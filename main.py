@@ -99,8 +99,18 @@ async def analyze(term: str, request: Request):
         search_terms = expanded_terms
         stop_words = set(stopwords.words('english'))
         
-        print(f"DEBUG: Term='{term}'")
-        print(f"DEBUG: Search Terms={search_terms}")
+        # Add common filler words that lack search intent
+        additional_stopwords = {
+            'with', 'from', 'that', 'your', 'about', 'this', 'what', 'when', 
+            'where', 'which', 'would', 'could', 'should', 'their', 'there',
+            'these', 'those', 'them', 'they', 'than', 'then', 'been', 'being',
+            'have', 'has', 'had', 'does', 'did', 'doing', 'will', 'just',
+            'dont', 'doesnt', 'didnt', 'isnt', 'arent', 'wasnt', 'werent',
+            'wont', 'wouldnt', 'couldnt', 'shouldnt', 'cant', 'cannot',
+            'much', 'many', 'more', 'most', 'some', 'such', 'very', 'really',
+            'also', 'even', 'still', 'like', 'make', 'made', 'makes', 'making'
+        }
+        stop_words.update(additional_stopwords)
 
         # Split text by non-alphanumeric characters to clean words
         words = [
@@ -110,13 +120,9 @@ async def analyze(term: str, request: Request):
             and w.lower() not in stop_words
         ]
         
-        counts = Counter(words).most_common(60)
-        
-        # DEBUG: Inject fake result to verify connection
-        if term.lower() == 'happy':
-            counts.insert(0, ('TEST_CONNECTION_SUCCESS', 999))
-            
-        print(f"DEBUG: Top 10 results: {counts[:10]}")
+        # Count words and filter by minimum frequency (2+ occurrences)
+        word_counts = Counter(words)
+        counts = [(word, count) for word, count in word_counts.most_common(60) if count >= 2]
 
         return {"term": term, "status": "ok", "data": {"counts": counts}}
 
