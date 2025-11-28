@@ -7,6 +7,7 @@ import json, os
 import nltk
 from nltk.corpus import stopwords
 import inflect
+import re
 
 p = inflect.engine()
 
@@ -74,14 +75,19 @@ async def analyze(term: str, request: Request):
         for submission in reddit.subreddit("all").search(term, limit=30):
             results.append(submission.title + " " + submission.selftext)
 
+
+
         text = " ".join(results)
         
         # Filter out words from the search term itself AND standard stopwords
-        search_terms = set(term.lower().split())
-        
+        # Use regex to split by non-alphanumeric characters to handle punctuation
+        search_terms_raw = set(re.split(r'[^a-zA-Z0-9]', term.lower()))
+        # Remove empty strings
+        search_terms_raw = {t for t in search_terms_raw if t}
+
         # Add singular and plural forms to search_terms
         expanded_terms = set()
-        for t in search_terms:
+        for t in search_terms_raw:
             expanded_terms.add(t)
             singular = p.singular_noun(t)
             if singular:
@@ -93,8 +99,9 @@ async def analyze(term: str, request: Request):
         search_terms = expanded_terms
         stop_words = set(stopwords.words('english'))
         
+        # Split text by non-alphanumeric characters to clean words
         words = [
-            w.lower() for w in text.split() 
+            w.lower() for w in re.split(r'[^a-zA-Z0-9]', text)
             if len(w) > 3 
             and w.lower() not in search_terms
             and w.lower() not in stop_words
